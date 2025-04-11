@@ -1,16 +1,29 @@
 const express = require("express");
-const LostItem = require("../models/LostItem");
-
 const router = express.Router();
+const LostItem = require("../models/LostItem"); // Import LostItem Schema
 
-// Report Lost Item
-router.post("/lost-item", async (req, res) => {
+// 📌 POST Endpoint: Report a Lost Item
+router.post("/", async (req, res) => {
   try {
-    const lostItem = new LostItem(req.body);
+    const { name, userGovtID, images, dateLost, locationLost, contactNo, description } = req.body;
+
+    // Create a new Lost Item entry
+    const lostItem = new LostItem({
+      name,
+      userGovtID,
+      images,
+      dateLost,
+      locationLost,
+      contactNo,
+      description,
+    });
+
+    // Save to the database
     await lostItem.save();
-    res.status(201).json({ message: "Lost item reported successfully" });
+    res.status(201).json({ message: "Lost item reported successfully!", lostItem });
+
   } catch (error) {
-    res.status(500).json({ error: "Failed to report lost item" });
+    res.status(500).json({ error: "Failed to report lost item", details: error.message });
   }
 });
 
