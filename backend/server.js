@@ -3,12 +3,16 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 require("dotenv").config();
 
+const userRoutes = require("./routes/userRoutes");
+const lostItemRoutes = require("./routes/lostItemRoutes");
+const foundItemRoutes = require("./routes/foundItemRoutes");
+
 // Initialize Express App
 const app = express();
 
 // Middleware
-app.use(express.json()); // Parse JSON requests
-app.use(cors()); // Enable CORS
+app.use(express.json());
+app.use(cors());
 
 // MongoDB Connection
 mongoose
@@ -18,6 +22,11 @@ mongoose
   })
   .then(() => console.log("MongoDB Connected", process.env.MONGO_URI))
   .catch((err) => console.log("MongoDB Connection Error:", err));
+
+// Routes
+app.use("/api/users", userRoutes);
+app.use("/api/items", lostItemRoutes);
+app.use("/api/items", foundItemRoutes);
 
 // Default Route
 app.get("/", (req, res) => {
