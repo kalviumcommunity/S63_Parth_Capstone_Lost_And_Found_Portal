@@ -27,4 +27,23 @@ router.post("/", async (req, res) => {
   }
 });
 
+// Get all lost items
+router.get('/', async (req, res) => {
+  try {
+    const items = await LostItem.find();
+    res.json(items);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error while fetching lost items.' });
+  }
+});
+// Get lost item by ID
+router.get('/:id', async (req, res) => {
+  try {
+    const item = await LostItem.findById(req.params.id);
+    if (!item) return res.status(404).json({ message: 'Lost item not found.' });
+    res.json(item);
+  } catch (error) {
+    res.status(500).json({ error: 'Server error while fetching item.' });
+  }
+});
 module.exports = router;
