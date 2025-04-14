@@ -46,4 +46,21 @@ router.get('/:id', async (req, res) => {
     res.status(500).json({ error: 'Server error while fetching item.' });
   }
 });
+router.put("/:id", async (req, res) => {
+  try {
+    const updatedItem = await LostItem.findByIdAndUpdate(
+      req.params.id, 
+      req.body, 
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedItem) {
+      return res.status(404).json({ message: "Lost item not found" });
+    }
+
+    res.json(updatedItem);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error });
+  }
+});
 module.exports = router;
