@@ -45,6 +45,7 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: 'Server error while fetching users.' });
   }
 });
+
 // Get user by ID
 router.get('/:id', async (req, res) => {
   try {
@@ -55,4 +56,5 @@ router.get('/:id', async (req, res) => {
     res.status(500).json({ error: 'Server error while fetching user.' });
   }
 });
+
 module.exports = router;
