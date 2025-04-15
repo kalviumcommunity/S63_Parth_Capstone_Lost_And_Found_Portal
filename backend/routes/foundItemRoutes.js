@@ -36,6 +36,7 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: 'Server error while fetching found items.' });
   }
 });
+
 // Get found item by ID
 router.get('/:id', async (req, res) => {
   try {
@@ -46,6 +47,7 @@ router.get('/:id', async (req, res) => {
     res.status(500).json({ error: 'Server error while fetching item.' });
   }
 });
+
 router.put("/:id", async (req, res) => {
   try {
     const updatedItem = await FoundItem.findByIdAndUpdate(
@@ -63,4 +65,5 @@ router.put("/:id", async (req, res) => {
     res.status(500).json({ message: "Server error", error });
   }
 });
+
 module.exports = router;
