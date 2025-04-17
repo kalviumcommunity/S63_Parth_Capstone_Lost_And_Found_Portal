@@ -5,7 +5,7 @@ const FoundItem = require("../models/FoundItem"); // Import FoundItem Schema
 // 📌 POST Endpoint: Report a Found Item
 router.post("/", async (req, res) => {
   try {
-    const { name, userGovtID, images, dateFound, locationFound, contactNo, description } = req.body;
+    const { name, userGovtID, images, dateFound, locationFound, contactNo, description, createdBy } = req.body;
 
     // Create a new Found Item entry
     const foundItem = new FoundItem({
@@ -16,6 +16,7 @@ router.post("/", async (req, res) => {
       locationFound,
       contactNo,
       description,
+      createdBy,
     });
 
     // Save to the database
@@ -30,7 +31,7 @@ router.post("/", async (req, res) => {
 // Get all found items
 router.get('/', async (req, res) => {
   try {
-    const items = await FoundItem.find();
+    const items = await FoundItem.find().populate('createdBy', 'name email');
     res.json(items);
   } catch (error) {
     res.status(500).json({ error: 'Server error while fetching found items.' });
@@ -40,7 +41,7 @@ router.get('/', async (req, res) => {
 // Get found item by ID
 router.get('/:id', async (req, res) => {
   try {
-    const item = await FoundItem.findById(req.params.id);
+    const item = await FoundItem.findById(req.params.id).populate('createdBy', 'name email');
     if (!item) return res.status(404).json({ message: 'Found item not found.' });
     res.json(item);
   } catch (error) {

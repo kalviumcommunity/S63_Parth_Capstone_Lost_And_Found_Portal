@@ -5,7 +5,7 @@ const LostItem = require("../models/LostItem"); // Import LostItem Schema
 // 📌 POST Endpoint: Report a Lost Item
 router.post("/", async (req, res) => {
   try {
-    const { name, userGovtID, images, dateLost, locationLost, contactNo, description } = req.body;
+    const { name, userGovtID, images, dateLost, locationLost, contactNo, description, createdBy } = req.body;
 
     // Create a new Lost Item entry
     const lostItem = new LostItem({
@@ -16,6 +16,7 @@ router.post("/", async (req, res) => {
       locationLost,
       contactNo,
       description,
+      createdBy,
     });
 
     // Save to the database
@@ -30,7 +31,7 @@ router.post("/", async (req, res) => {
 // Get all lost items
 router.get('/', async (req, res) => {
   try {
-    const items = await LostItem.find();
+    const items = await LostItem.find().populate('createdBy', 'name email');
     res.json(items);
   } catch (error) {
     res.status(500).json({ error: 'Server error while fetching lost items.' });
@@ -50,11 +51,7 @@ router.get('/:id', async (req, res) => {
 
 router.put("/:id", async (req, res) => {
   try {
-    const updatedItem = await LostItem.findByIdAndUpdate(
-      req.params.id, 
-      req.body, 
-      { new: true, runValidators: true }
-    );
+    const item = await LostItem.findById(req.params.id).populate('createdBy', 'name email');
 
     if (!updatedItem) {
       return res.status(404).json({ message: "Lost item not found" });
