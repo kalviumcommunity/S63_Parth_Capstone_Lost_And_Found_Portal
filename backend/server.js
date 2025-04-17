@@ -13,6 +13,7 @@ app.use(cors());
 const lostItemRoutes = require("./routes/lostItemRoutes");
 const foundItemRoutes = require("./routes/foundItemRoutes");
 const userRoutes = require("./routes/userRoutes");
+const userReportsRoutes = require("./routes/userReportsRoutes");
 
 // Connect to MongoDB
 mongoose
@@ -27,7 +28,7 @@ mongoose
 app.use("/api/lost-items", lostItemRoutes);
 app.use("/api/found-items", foundItemRoutes);
 app.use("/api/register", userRoutes); // Updated route for consistency
-
+app.use("/api/user", userReportsRoutes);
 // Root route (optional health check or welcome message)
 app.get("/", (req, res) => {
   res.send("🌐 Founder's Hub API is running");
