@@ -26,7 +26,7 @@ mongoose
 // Define routes
 app.use("/api/lost-items", lostItemRoutes);
 app.use("/api/found-items", foundItemRoutes);
-app.use("/api/users", userRoutes); // Updated route for consistency
+app.use("/api/register", userRoutes); // Updated route for consistency
 
 // Root route (optional health check or welcome message)
 app.get("/", (req, res) => {
