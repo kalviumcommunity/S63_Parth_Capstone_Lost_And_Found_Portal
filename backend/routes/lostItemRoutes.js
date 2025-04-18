@@ -41,25 +41,31 @@ router.get('/', async (req, res) => {
 // Get lost item by ID
 router.get('/:id', async (req, res) => {
   try {
-    const item = await LostItem.findById(req.params.id);
+    // Add .populate() here
+    const item = await LostItem.findById(req.params.id).populate('createdBy', 'name email');
     if (!item) return res.status(404).json({ message: 'Lost item not found.' });
     res.json(item);
   } catch (error) {
-    res.status(500).json({ error: 'Server error while fetching item.' });
+    // ... error handling
   }
 });
 
 router.put("/:id", async (req, res) => {
   try {
-    const item = await LostItem.findById(req.params.id).populate('createdBy', 'name email');
+    
+    const updatedItem = await LostItem.findByIdAndUpdate(
+      req.params.id,
+      req.body, 
+      { new: true, runValidators: true } 
+    );
 
     if (!updatedItem) {
       return res.status(404).json({ message: "Lost item not found" });
     }
 
-    res.json(updatedItem);
+    res.json(updatedItem); 
   } catch (error) {
-    res.status(500).json({ message: "Server error", error });
+    res.status(500).json({ message: "Server error", error: error.message }); 
   }
 });
 
