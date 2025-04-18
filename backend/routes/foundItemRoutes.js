@@ -67,4 +67,18 @@ router.put("/:id", async (req, res) => {
   }
 });
 
+// 🗑 DELETE found item by ID
+router.delete('/:id', async (req, res) => {
+  try {
+    const deletedItem = await FoundItem.findByIdAndDelete(req.params.id);
+    if (!deletedItem) {
+      return res.status(404).json({ message: 'Found item not found' });
+    }
+    res.json({ message: 'Found item deleted successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error while deleting item', error: error.message });
+  }
+});
+
+
 module.exports = router;
