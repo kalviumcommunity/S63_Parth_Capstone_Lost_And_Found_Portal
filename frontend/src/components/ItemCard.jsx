@@ -3,41 +3,84 @@ import React from 'react';
 import { Link } from 'react-router-dom'; // Use Link for navigation
 
 const ItemCard = ({ item }) => {
-    // Infer type and set up link based on backend structure
-    // IMPORTANT: Check if your backend actually returns a 'type' field
-    // If not, infer based on dateLost/dateFound existing
-    const itemType = item.type || (item.dateLost ? 'lost-items' : 'found-items');
+    // --- Determine item type and setup links/styles ---
+    // Check if backend explicitly sends 'type', otherwise infer from date fields
+    // Ensure your backend search/list endpoints actually INCLUDE dateLost/dateFound
+    let itemType = 'unknown'; // Default type
+    if (item.type) {
+        itemType = item.type === 'lost' ? 'lost-items' : 'found-items';
+    } else if (item.dateLost) {
+        itemType = 'lost-items';
+    } else if (item.dateFound) {
+        itemType = 'found-items';
+    }
+
     const itemStatus = itemType === 'lost-items' ? 'Lost' : 'Found';
-    const statusColor = itemType === 'lost-items' ? 'text-red-500 bg-red-50' : 'text-green-500 bg-green-50';
-    // --- Dynamic Link Construction ---
-    const detailLink = `/${itemType}/${item._id}`; // e.g., /lost-items/123 or /found-items/456
+    const statusColor = itemType === 'lost-items' ? 'text-red-600 bg-red-100' : 'text-green-600 bg-green-100'; // Slightly stronger colors
 
-    const imageUrl = item.images && item.images.length > 0
-        ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/uploads/${item.images[0]}`
-        : '/placeholder-image.png';
+    // Construct the link to the detail page
+    // Make sure item._id is available
+    const detailLink = item._id ? `/${itemType}/${item._id}` : '#'; // Fallback link if no ID
 
-    const handleImageError = (e) => { /* ... same error handling ... */ };
+    // --- Image Handling ---
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+    const placeholderImg = '/placeholder-image.png'; // Ensure this exists in your /public folder
+
+    const imageUrl = item.images && item.images.length > 0 && item.images[0]
+        ? `${apiUrl}/uploads/${item.images[0]}`
+        : placeholderImg;
+
+    const handleImageError = (e) => {
+        e.target.onerror = null; // Prevent infinite loops if placeholder also fails
+        e.target.src = placeholderImg;
+        e.target.style.objectFit = 'contain'; // Adjust fit style for placeholder
+        console.warn(`Failed to load image: ${item.images?.[0]}`); // Log warning
+    };
+    // --- End Image Handling ---
 
     return (
-        <div className="border rounded-lg overflow-hidden shadow-md bg-white flex flex-col transition-shadow duration-200 hover:shadow-xl">
-            {/* Image */}
-            <div className="w-full h-48 bg-gray-200">
-                 <img src={imageUrl} alt={item.name || 'Item image'} className="w-full h-full object-cover" onError={handleImageError} />
-            </div>
-            {/* Content */}
-            <div className="p-4 flex flex-col flex-grow">
-                <h3 className="font-semibold text-lg mb-1 truncate">{item.name || 'Unnamed Item'}</h3>
+        // --- Main Card Container ---
+        // Added group class for potential hover effects on children
+        <div className="group border rounded-lg overflow-hidden shadow-md bg-white flex flex-col transition-shadow duration-300 hover:shadow-xl h-full"> {/* Ensure full height */}
+
+            {/* Image Section */}
+            <Link to={detailLink} className="block w-full h-48 bg-gray-100 overflow-hidden"> {/* Make image clickable */}
+                 <img
+                    src={imageUrl}
+                    alt={item.name || 'Item image'}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" // Added hover effect
+                    onError={handleImageError}
+                 />
+            </Link>
+
+            {/* Content Section */}
+            <div className="p-4 flex flex-col flex-grow"> {/* flex-grow pushes button to bottom */}
+                {/* Item Name */}
+                <h3 className="font-semibold text-lg mb-1 truncate" title={item.name || 'Unnamed Item'}>
+                    {item.name || 'Unnamed Item'}
+                </h3>
+
+                {/* Status and Date */}
                 <p className="text-xs text-gray-500 mb-2">
-                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${statusColor}`}>{itemStatus}</span>
-                    {' on '} {new Date(item.dateLost || item.dateFound).toLocaleDateString()}
+                    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${statusColor}`}>
+                        {itemStatus}
+                    </span>
+                    {' on '}
+                    {/* Safely format date */}
+                    {item.dateLost || item.dateFound ? new Date(item.dateLost || item.dateFound).toLocaleDateString() : 'N/A'}
                 </p>
-                <p className="text-sm text-gray-600 mb-3 line-clamp-3 flex-grow">{item.description || 'No description.'}</p>
-                {/* --- Updated Link --- */}
+
+                {/* Description */}
+                <p className="text-sm text-gray-700 mb-4 line-clamp-3 flex-grow"> {/* Use flex-grow here */}
+                    {item.description || 'No description provided.'}
+                </p>
+
+                {/* View Details / Claim Link */}
                 <Link
-                    to={detailLink} // Use the dynamically constructed link
-                    className="mt-auto block text-center w-full bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out"
+                    to={detailLink}
+                    className="mt-auto block text-center w-full bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                 >
-                    View Details {itemType === 'found-items' ? '/ Claim' : ''} {/* Adjust text */}
+                    View Details {itemType === 'found-items' ? '/ Claim' : ''}
                 </Link>
             </div>
         </div>

@@ -13,6 +13,11 @@ import FoundItemForm from './pages/FoundItemForm';
 import SearchResultsPage from './pages/SearchResultsPage';
 import MyReportsPage from './pages/MyReportsPage';
 import ItemDetailPage from './pages/ItemDetailPage';
+import ProfilePage from './pages/ProfilePage';
+import About from './pages/About';
+import Guidelines from './pages/Guidelines';
+import Disclaimer from './pages/Disclaimer';
+import Contact from './pages/Contact';
 // ... other page imports ...
 
 // --- Placeholder Page Component (keep for other routes) ---
@@ -37,15 +42,20 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
 
-            <Route path="/about" element={<PlaceholderPage title="About Page" />} />
-            <Route path="/guidelines" element={<PlaceholderPage title="Guidelines Page" />} />
-            <Route path="/disclaimer" element={<PlaceholderPage title="Disclaimer Page" />} />
+            <Route path="/about" element={<About/>} />
+            <Route path="/guidelines" element={<Guidelines />} />
+            <Route path="/disclaimer" element={<Disclaimer />} />
             <Route path="/donate" element={<PlaceholderPage title="Donate Page" />} />
-            <Route path="/contact" element={<PlaceholderPage title="Contact Page" />} />
+            <Route path="/contact" element={<Contact />} />
             <Route path="/careers" element={<PlaceholderPage title="Careers Page" />} />
             <Route path="/:itemType/:id" element={<ItemDetailPage />} />  
             <Route path="/search" element={<SearchResultsPage />} />
             <Route path="/my-reports" element={<MyReportsPage />} />
+            <Route path="/login" element={<LoginForm />} />
+            <Route path="/signup" element={<SignupForm />} />
+            <Route path="/profile" element={<ProfilePage />} />
+
+
             {/* Removed /make-payment route */}
 
             {/* Auth Routes */}
