@@ -15,6 +15,8 @@ const foundItemRoutes = require("./routes/foundItemRoutes");
 const userRoutes = require("./routes/userRoutes");
 const userReportsRoutes = require("./routes/userReportsRoutes");
 const path = require("path");
+const searchRoutes = require("./routes/items");
+const claimRoutes = require("./routes/claimRoutes");
 
 // Connect to MongoDB
 mongoose
@@ -30,6 +32,8 @@ app.use("/api/lost-items", lostItemRoutes);
 app.use("/api/found-items", foundItemRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/user", userReportsRoutes);
+app.use("/api", searchRoutes);
+app.use("/api/claims", claimRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Root route (optional health check or welcome message)

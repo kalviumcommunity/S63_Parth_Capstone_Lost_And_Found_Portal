@@ -1,27 +1,29 @@
+// src/pages/SignupForm.jsx
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom'; // Import Link for navigation
+import { Link, useNavigate } from 'react-router-dom'; // Added useNavigate
 
 const SignupForm = () => {
     // State for form fields
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState(''); // Added Confirm Password
-    const [profilePicture, setProfilePicture] = useState(null); // State for the selected file object
-    const [previewUrl, setPreviewUrl] = useState(''); // State for image preview URL
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [profilePicture, setProfilePicture] = useState(null);
+    const [previewUrl, setPreviewUrl] = useState('');
 
     // State for messages and loading
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
 
+    const navigate = useNavigate(); // Hook for redirection
+
     // Handle file input change and create preview
     const handleFileChange = (e) => {
         const file = e.target.files[0];
         if (file) {
             setProfilePicture(file);
-            // Create a temporary URL for preview
             setPreviewUrl(URL.createObjectURL(file));
         } else {
             setProfilePicture(null);
@@ -29,9 +31,8 @@ const SignupForm = () => {
         }
     };
 
-    // Clean up the preview URL when component unmounts or file changes
+    // Clean up preview URL
     useEffect(() => {
-        // This is important to prevent memory leaks
         return () => {
             if (previewUrl) {
                 URL.revokeObjectURL(previewUrl);
@@ -45,10 +46,9 @@ const SignupForm = () => {
         setMessage('');
         setError('');
 
-        // --- Password Confirmation Check ---
         if (password !== confirmPassword) {
             setError("Passwords do not match!");
-            return; // Stop submission if passwords don't match
+            return;
         }
 
         setLoading(true);
@@ -56,36 +56,35 @@ const SignupForm = () => {
         const formData = new FormData();
         formData.append('name', name);
         formData.append('email', email);
-        formData.append('password', password); // Send the actual password
+        formData.append('password', password);
         if (profilePicture) {
             formData.append('profilePicture', profilePicture);
         }
 
         try {
-            // --- Send data to backend ---
-            // !!! IMPORTANT: Replace with your actual Render backend URL if deployed !!!
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'; // Use env variable or default
-            const response = await axios.post(`${apiUrl}/api/users/`, formData, {
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+            const response = await axios.post(`${apiUrl}/api/users/`, formData, { // Ensure endpoint is correct (/api/users/)
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
             });
 
-            setMessage(response.data.message + " You can now login."); // Show success message
-            setError(''); // Clear any previous error
-            // Reset form fields
-            setName('');
-            setEmail('');
-            setPassword('');
-            setConfirmPassword('');
-            setProfilePicture(null);
-            setPreviewUrl('');
-            e.target.reset(); // Reset file input visually
+            setMessage(response.data.message + " Redirecting to login...");
+            setError('');
+            // Reset form fields (optional, as we redirect)
+            // ... reset states ...
+            // e.target.reset();
+
+            // Redirect to login page after successful signup
+            setTimeout(() => {
+                navigate('/login'); // Redirect after 2 seconds
+            }, 2000);
+
 
         } catch (err) {
             console.error("Signup Error:", err.response?.data || err.message);
             setError(err.response?.data?.message || err.response?.data?.errors?.[0]?.msg || 'Signup failed. Please try again.');
-             setMessage(''); // Clear any previous success message
+             setMessage('');
         } finally {
             setLoading(false);
         }
@@ -93,26 +92,25 @@ const SignupForm = () => {
 
     // --- JSX with Tailwind CSS ---
     return (
-        <div className="flex items-center justify-center min-h-screen bg-gray-100 px-4">
-            <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-                <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Create Account</h2>
+        <div className="flex items-center justify-center min-h-[calc(100vh-80px)] bg-gray-100 px-4 py-12"> {/* Adjusted min-height */}
+            <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md"> {/* Increased shadow */}
+                <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Create Your Account</h2>
 
-                {/* Display Messages */}
-                {message && <p className="mb-4 text-sm text-center text-green-600 bg-green-100 p-2 rounded">{message}</p>}
-                {error && <p className="mb-4 text-sm text-center text-red-600 bg-red-100 p-2 rounded">{error}</p>}
+                {message && <p className="mb-4 text-sm text-center text-green-600 bg-green-50 p-3 rounded-md border border-green-200">{message}</p>}
+                {error && <p className="mb-4 text-sm text-center text-red-600 bg-red-50 p-3 rounded-md border border-red-200">{error}</p>}
 
                 <form onSubmit={handleSubmit} noValidate>
                     {/* Name Input */}
                     <div className="mb-4">
-                        <label htmlFor="name" className="block text-gray-700 text-sm font-bold mb-2">
-                            Full Name
+                        <label htmlFor="name" className="block text-gray-700 text-sm font-semibold mb-2">
+                            Full Name <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="text"
                             id="name"
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             required
                             aria-label="Full Name"
                         />
@@ -120,15 +118,15 @@ const SignupForm = () => {
 
                     {/* Email Input */}
                     <div className="mb-4">
-                        <label htmlFor="email" className="block text-gray-700 text-sm font-bold mb-2">
-                            Email Address
+                        <label htmlFor="email" className="block text-gray-700 text-sm font-semibold mb-2">
+                            Email Address <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="email"
                             id="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             required
                             aria-label="Email Address"
                         />
@@ -136,15 +134,15 @@ const SignupForm = () => {
 
                     {/* Password Input */}
                     <div className="mb-4">
-                        <label htmlFor="password" className="block text-gray-700 text-sm font-bold mb-2">
-                            Password
+                        <label htmlFor="password" className="block text-gray-700 text-sm font-semibold mb-2">
+                            Password <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="password"
                             id="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             minLength="6"
                             required
                             aria-label="Password"
@@ -153,16 +151,16 @@ const SignupForm = () => {
                     </div>
 
                      {/* Confirm Password Input */}
-                    <div className="mb-6"> {/* Increased bottom margin */}
-                        <label htmlFor="confirmPassword" className="block text-gray-700 text-sm font-bold mb-2">
-                            Confirm Password
+                    <div className="mb-6">
+                        <label htmlFor="confirmPassword" className="block text-gray-700 text-sm font-semibold mb-2">
+                            Confirm Password <span className="text-red-500">*</span>
                         </label>
                         <input
                             type="password"
                             id="confirmPassword"
                             value={confirmPassword}
                             onChange={(e) => setConfirmPassword(e.target.value)}
-                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                             minLength="6"
                             required
                             aria-label="Confirm Password"
@@ -171,7 +169,7 @@ const SignupForm = () => {
 
                     {/* Profile Picture Input */}
                     <div className="mb-6">
-                        <label htmlFor="profilePicture" className="block text-gray-700 text-sm font-bold mb-2">
+                        <label htmlFor="profilePicture" className="block text-gray-700 text-sm font-semibold mb-2">
                             Profile Picture (Optional)
                         </label>
                         <input
@@ -179,13 +177,12 @@ const SignupForm = () => {
                             id="profilePicture"
                             accept="image/png, image/jpeg, image/jpg"
                             onChange={handleFileChange}
-                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                            className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border file:border-gray-300 file:text-sm file:font-medium file:bg-white file:text-gray-700 hover:file:bg-gray-50 cursor-pointer"
                             aria-label="Profile Picture"
                         />
-                         {/* Image Preview */}
-                        {previewUrl && (
+                         {previewUrl && (
                             <div className="mt-4">
-                                <img src={previewUrl} alt="Profile Preview" className="w-20 h-20 rounded-full object-cover border border-gray-300" />
+                                <img src={previewUrl} alt="Profile Preview" className="w-20 h-20 rounded-full object-cover border-2 border-gray-300" />
                             </div>
                         )}
                     </div>
@@ -195,19 +192,18 @@ const SignupForm = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className={`w-full ${loading ? 'bg-blue-300' : 'bg-blue-500 hover:bg-blue-700'} text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition duration-150 ease-in-out`}
+                            className={`w-full ${loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} text-white font-bold py-2.5 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out`}
                             aria-busy={loading}
                         >
-                            {loading ? 'Registering...' : 'Create Account'}
+                            {loading ? 'Creating Account...' : 'Create Account'}
                         </button>
                     </div>
                 </form>
 
-                 {/* Link to Login */}
-                 <p className="mt-6 text-center text-sm text-gray-600">
+                 <p className="mt-8 text-center text-sm text-gray-600">
                     Already have an account?{' '}
-                    <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500">
-                        Log in
+                    <Link to="/login" className="font-medium text-blue-600 hover:text-blue-500 hover:underline">
+                        Log In
                     </Link>
                 </p>
             </div>
