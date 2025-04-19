@@ -14,6 +14,7 @@ const lostItemRoutes = require("./routes/lostItemRoutes");
 const foundItemRoutes = require("./routes/foundItemRoutes");
 const userRoutes = require("./routes/userRoutes");
 const userReportsRoutes = require("./routes/userReportsRoutes");
+const path = require("path");
 
 // Connect to MongoDB
 mongoose
@@ -29,6 +30,8 @@ app.use("/api/lost-items", lostItemRoutes);
 app.use("/api/found-items", foundItemRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/user", userReportsRoutes);
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+
 // Root route (optional health check or welcome message)
 app.get("/", (req, res) => {
   res.send("🌐 Founder's Hub API is running");

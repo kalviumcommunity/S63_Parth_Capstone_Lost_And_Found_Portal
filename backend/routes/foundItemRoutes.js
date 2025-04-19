@@ -1,30 +1,35 @@
 const express = require("express");
 const router = express.Router();
 const FoundItem = require("../models/FoundItem"); // Import FoundItem Schema
+const upload = require("../middleware/uploadMiddleware")
 
 // 📌 POST Endpoint: Report a Found Item
-router.post("/", async (req, res) => {
+router.post("/", upload.fields([
+  { name: "userGovtID", maxCount: 1 },
+  { name: "images", maxCount: 5 }
+]), async (req, res) => {
   try {
-    const { name, userGovtID, images, dateFound, locationFound, contactNo, description, createdBy } = req.body;
+    const { name, dateLost, locationLost, contactNo, description, createdBy } = req.body;
 
-    // Create a new Found Item entry
-    const foundItem = new FoundItem({
+    const userGovtID = req.files.userGovtID?.[0].filename;
+    const images = req.files.images?.map(file => file.filename);
+
+    const lostItem = new LostItem({
       name,
       userGovtID,
       images,
-      dateFound,
-      locationFound,
+      dateLost,
+      locationLost,
       contactNo,
       description,
       createdBy,
     });
 
-    // Save to the database
-    await foundItem.save();
-    res.status(201).json({ message: "Found item reported successfully!", foundItem });
+    await lostItem.save();
+    res.status(201).json({ message: "Lost item submitted!", lostItem });
 
   } catch (error) {
-    res.status(500).json({ error: "Failed to report found item", details: error.message });
+    res.status(500).json({ error: "Upload failed", details: error.message });
   }
 });
 
