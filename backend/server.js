@@ -17,6 +17,7 @@ const userReportsRoutes = require("./routes/userReportsRoutes");
 const path = require("path");
 const searchRoutes = require("./routes/items");
 const claimRoutes = require("./routes/claimRoutes");
+const contactRoutes = require("./routes/contactRoutes")
 
 // Connect to MongoDB
 mongoose
@@ -35,6 +36,7 @@ app.use("/api/user", userReportsRoutes);
 app.use("/api", searchRoutes);
 app.use("/api/claims", claimRoutes);
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
+app.use("/api/contact", contactRoutes); // <<<--- REGISTER contact routes
 
 // Root route (optional health check or welcome message)
 app.get("/", (req, res) => {

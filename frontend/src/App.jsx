@@ -3,6 +3,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer'; // <<< 1. IMPORT FOOTER
+import ProtectedRoute from './components/ProtectedRoute';
 
 import SignupForm from './pages/SignupForm';
 import LoginForm from './pages/LoginForm';

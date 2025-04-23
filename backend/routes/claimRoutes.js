@@ -60,4 +60,64 @@ router.post('/', async (req, res) => {
 // TODO: Add routes later to GET claims (e.g., for a specific item or by a user)
 // TODO: Add routes later to UPDATE claim status (e.g., PATCH /api/claims/:claimId/approve)
 
+router.patch(
+    '/:claimId/status',
+    // TODO: Add authMiddleware here later
+    async (req, res) => {
+        const { claimId } = req.params;
+        const { status } = req.body; // Expecting status: 'Approved' or 'Rejected'
+
+        // Validate the incoming status
+        if (!status || !['Approved', 'Rejected'].includes(status)) {
+            return res.status(400).json({ message: 'Invalid status provided. Must be "Approved" or "Rejected".' });
+        }
+
+        try {
+            // Find the claim by its ID
+            const claim = await ClaimRequest.findById(claimId);
+
+            if (!claim) {
+                return res.status(404).json({ message: 'Claim request not found.' });
+            }
+
+            // --- Authorization Check (Placeholder - Implement with real auth) ---
+            // TODO: Get logged-in user ID from authMiddleware (e.g., req.user.id)
+            const loggedInUserId = 'placeholder_user_id_from_auth'; // Replace with actual req.user.id
+
+            // TODO: Fetch the FoundItem to check its creator
+            // const foundItem = await FoundItem.findById(claim.foundItemId);
+            // if (!foundItem) {
+            //     return res.status(404).json({ message: 'Associated found item not found.' });
+            // }
+            // if (foundItem.createdBy.toString() !== loggedInUserId) {
+            //     return res.status(403).json({ message: 'Not authorized to update this claim status.' });
+            // }
+            // --- End Placeholder ---
+
+            // Prevent updating status if it's not 'Pending' anymore
+            if (claim.status !== 'Pending') {
+                 return res.status(400).json({ message: `Claim has already been ${claim.status.toLowerCase()}.` });
+            }
+
+            // Update the claim status
+            claim.status = status;
+            // Optional: Add timestamp for response
+            // claim.respondedAt = Date.now();
+
+            const updatedClaim = await claim.save(); // Save the updated claim
+
+            // TODO: Notify the claimant (claim.claimantUserId) about the status update (via email/notification)
+
+            res.json({ message: `Claim status updated to ${status}`, claim: updatedClaim });
+
+        } catch (error) {
+            console.error("Error updating claim status:", error);
+             if (error.kind === 'ObjectId') { // Handle invalid claimId format
+                return res.status(400).json({ message: 'Invalid claim ID format.' });
+            }
+            res.status(500).json({ message: 'Server error while updating claim status.' });
+        }
+    }
+);
+
 module.exports = router;

@@ -1,61 +1,42 @@
+// src/pages/LoginForm.jsx
 import React, { useState } from 'react';
-import axios from 'axios';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext'; // <<<--- IMPORT useAuth
 
-// TODO: Replace this with actual context/state management later
-// For now, just saving token to localStorage as an example
-const saveAuthData = (token, user) => {
-    localStorage.setItem('authToken', token);
-    localStorage.setItem('userData', JSON.stringify(user));
-    console.log("Auth data saved to localStorage"); // For debugging
-}
+// Remove the old saveAuthData function if it's still in this file
 
 const LoginForm = () => {
     // State for form fields
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
 
-    // State for messages and loading
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
+    // --- Use Auth Context ---
+    // Get the login function and any loading/error state from the context
+    const { login, isLoadingAuth, error: authError } = useAuth();
+    // --- ---
+
+    // Local error state specifically for this form's interaction (optional)
+    const [formError, setFormError] = useState('');
 
     const navigate = useNavigate(); // Hook for redirection
 
     // Handle form submission
     const handleSubmit = async (e) => {
         e.preventDefault();
-        setError(''); // Clear previous errors
-        setLoading(true);
+        setFormError(''); // Clear previous form-specific errors
 
-        try {
-            // --- Send data to backend ---
-            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-            // Make sure the endpoint matches your backend route (/api/users/login)
-            const response = await axios.post(`${apiUrl}/api/users/login`, {
-                email,
-                password,
-            });
+        // --- Call the login function from AuthContext ---
+        const success = await login(email, password); // login handles API call, state update, localStorage
+        // --- ---
 
-            // --- Handle Success ---
-            if (response.data && response.data.token) {
-                console.log("Login successful:", response.data);
-                // Save token and user data (e.g., localStorage or context)
-                saveAuthData(response.data.token, response.data.user);
-
-                // TODO: Update global authentication state here
-
-                // Redirect to a protected page (e.g., profile or dashboard)
-                navigate('/profile'); // Or navigate('/') for home page
-            } else {
-                 setError('Login successful, but no token received.'); // Should not happen with correct backend
-            }
-
-        } catch (err) {
-            // --- Handle Errors ---
-            console.error("Login Error:", err.response?.data || err.message);
-            setError(err.response?.data?.message || 'Invalid email or password. Please try again.');
-        } finally {
-            setLoading(false); // Stop loading indicator
+        if (success) {
+            console.log("Login successful via context, navigating to profile...");
+            navigate('/profile'); // Navigate on successful login
+        } else {
+             // Error message is likely already set in the AuthContext's 'error' state (authError)
+             // You could set a local error too if needed
+             setFormError(authError || "Login failed. Please check credentials."); // Use error from context if available
+             console.log("Login failed via context.");
         }
     };
 
@@ -65,8 +46,13 @@ const LoginForm = () => {
             <div className="bg-white p-8 rounded-lg shadow-lg w-full max-w-md">
                 <h2 className="text-2xl font-bold mb-6 text-center text-gray-800">Log In</h2>
 
-                {/* Display Error Messages */}
-                {error && <p className="mb-4 text-sm text-center text-red-600 bg-red-50 p-3 rounded-md border border-red-200">{error}</p>}
+                {/* Display Error Messages (Use error from context OR local form error) */}
+                {(authError || formError) && (
+                    <p className="mb-4 text-sm text-center text-red-600 bg-red-50 p-3 rounded-md border border-red-200">
+                        {authError || formError}
+                    </p>
+                )}
+
 
                 <form onSubmit={handleSubmit} noValidate>
                     {/* Email Input */}
@@ -79,7 +65,7 @@ const LoginForm = () => {
                             id="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="input-style" // Re-use style defined elsewhere or add classes
                             required
                             aria-label="Email Address"
                         />
@@ -95,27 +81,21 @@ const LoginForm = () => {
                             id="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            className="input-style"
                             required
                             aria-label="Password"
                         />
-                        {/* Optional: Forgot Password Link */}
-                        {/* <div className="text-right mt-1">
-                            <Link to="/forgot-password" className="text-xs text-blue-600 hover:underline">
-                                Forgot Password?
-                            </Link>
-                        </div> */}
                     </div>
 
                     {/* Submit Button */}
                     <div className="flex items-center justify-between">
                         <button
                             type="submit"
-                            disabled={loading}
-                            className={`w-full ${loading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} text-white font-bold py-2.5 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out`}
-                            aria-busy={loading}
+                            disabled={isLoadingAuth} // Disable button while context is loading/logging in
+                            className={`w-full ${isLoadingAuth ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'} text-white font-bold py-2.5 px-4 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out`}
+                            aria-busy={isLoadingAuth}
                         >
-                            {loading ? 'Logging In...' : 'Log In'}
+                            {isLoadingAuth ? 'Logging In...' : 'Log In'}
                         </button>
                     </div>
                 </form>
@@ -128,6 +108,10 @@ const LoginForm = () => {
                     </Link>
                 </p>
             </div>
+             {/* Reusable input style */}
+             <style jsx>{`
+                .input-style { @apply shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent; }
+            `}</style>
         </div>
     );
 };
