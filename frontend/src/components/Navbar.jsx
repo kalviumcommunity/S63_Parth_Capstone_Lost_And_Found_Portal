@@ -72,6 +72,7 @@ const Navbar = () => {
                 </NavLink>
                 {/* --- END ADDED --- */}
 
+                <NavLink to="/dashboard" className={getNavLinkClass}>Dashboard</NavLink>
                 <NavLink to="/my-reports" className={getNavLinkClass}>My Reports</NavLink>
 
                 {/* Profile Picture Link */}

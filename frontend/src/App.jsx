@@ -19,6 +19,7 @@ import About from './pages/About';
 import Guidelines from './pages/Guidelines';
 import Disclaimer from './pages/Disclaimer';
 import Contact from './pages/Contact';
+import Dashboard from './pages/Dashboard';
 // ... other page imports ...
 
 // --- Placeholder Page Component (keep for other routes) ---
@@ -85,6 +86,10 @@ function App() {
             <Route
               path="/report-found"
               element={isAuthenticated ? <FoundItemForm /> : <Navigate to="/login" replace />}
+            />
+            <Route
+              path="/dashboard"
+              element={isAuthenticated ? <Dashboard /> : <Navigate to="/login" replace />}
             />
 
             {/* Removed duplicate/unclear routes like /lostitem-form */}

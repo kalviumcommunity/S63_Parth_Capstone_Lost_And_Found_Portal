@@ -51,7 +51,34 @@ router.get('/:id', async (req, res) => {
     if (!item) return res.status(404).json({ message: 'Lost item not found.' });
     res.json(item);
   } catch (error) {
-    // ... error handling
+    res.status(500).json({ error: 'Server error while fetching lost item.', details: error.message });
+  }
+});
+
+// Get found items related to a lost item
+router.get('/:id/matches', async (req, res) => {
+  try {
+    const lostItemId = req.params.id;
+    
+    // Check if the lost item exists
+    const lostItem = await LostItem.findById(lostItemId);
+    if (!lostItem) {
+      return res.status(404).json({ message: 'Lost item not found.' });
+    }
+    
+    // Find all found items that reference this lost item
+    const FoundItem = require('../models/FoundItem');
+    const matches = await FoundItem.find({ relatedLostItem: lostItemId })
+      .populate('createdBy', 'name email profilePicture')
+      .sort({ createdAt: -1 });
+    
+    res.json({
+      lostItem,
+      matches
+    });
+  } catch (error) {
+    console.error("Error fetching matches for lost item:", error);
+    res.status(500).json({ error: 'Server error while fetching matches.', details: error.message });
   }
 });
 
