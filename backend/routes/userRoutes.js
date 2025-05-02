@@ -144,6 +144,72 @@ router.post( // <<<--- ADDED LOGIN ROUTE
     }
 );
 
+// --- NEW: PATCH /api/users/:id/picture ---
+// @route   PATCH /api/users/:id/picture
+// @desc    Update user's profile picture
+// @access  Private (Needs Authentication)
+router.patch(
+    "/:id/picture",
+    // TODO: Add 'auth' middleware here later to protect route and get req.user.id
+    upload.single("profilePicture"), // Expect a single file named 'profilePicture'
+    async (req, res) => {
+        // Check if a file was actually uploaded by multer
+        if (!req.file) {
+            return res.status(400).json({ message: "No profile picture file uploaded." });
+        }
+
+        const userId = req.params.id;
+        const newProfilePictureFilename = req.file.filename;
+
+        try {
+            // Find the user by the ID from the URL parameter
+            const user = await User.findById(userId);
+
+            if (!user) {
+                return res.status(404).json({ message: "User not found." });
+            }
+
+            // --- Authorization Check (Placeholder) ---
+            // TODO: Later, verify if the logged-in user (req.user.id) matches the userId param
+            // if (req.user.id !== userId) {
+            //     return res.status(403).json({ message: "User not authorized to update this profile." });
+            // }
+            // --- ---
+
+            // Optional: Delete the old profile picture file from /uploads if it exists
+            // This requires the 'fs' module and careful error handling - skipping for now for simplicity.
+            // if (user.profilePicture) {
+            //    const oldPath = path.join(__dirname, '..', 'uploads', user.profilePicture);
+            //    fs.unlink(oldPath, (err) => { if (err) console.error("Error deleting old profile pic:", err); });
+            // }
+
+            // Update the user document
+            user.profilePicture = newProfilePictureFilename;
+            await user.save(); // Save the changes
+
+            // Respond with success and updated user info (excluding password)
+            res.json({
+                message: "Profile picture updated successfully.",
+                user: {
+                    _id: user._id,
+                    name: user.name,
+                    email: user.email,
+                    profilePicture: user.profilePicture, // Send back the new filename
+                    createdAt: user.createdAt,
+                }
+            });
+
+        } catch (error) {
+            console.error("Error updating profile picture:", error);
+            if (error.kind === 'ObjectId') {
+                return res.status(400).json({ message: 'Invalid user ID format.' });
+            }
+            res.status(500).json({ message: "Server error while updating profile picture." });
+        }
+    }
+);
+// --- END NEW PATCH ROUTE ---
+
 
 // --- GET Routes (Keep as they were, added password exclusion) ---
 // Get all users
