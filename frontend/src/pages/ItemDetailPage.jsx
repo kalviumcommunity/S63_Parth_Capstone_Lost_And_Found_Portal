@@ -13,7 +13,7 @@ const ItemDetailPage = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
-    // Claim Form State
+    // Claim Form State (for found items)
     const [claimName, setClaimName] = useState('');
     const [claimContact, setClaimContact] = useState('');
     const [claimDescription, setClaimDescription] = useState('');
@@ -21,8 +21,20 @@ const ItemDetailPage = () => {
     const [claimMessage, setClaimMessage] = useState('');
     const [claimError, setClaimError] = useState('');
 
+    // "I Have This Item" Form State (for lost items)
+    const [foundContact, setFoundContact] = useState('');
+    const [foundDescription, setFoundDescription] = useState('');
+    const [foundLocation, setFoundLocation] = useState('');
+    const [foundDate, setFoundDate] = useState('');
+    const [foundImages, setFoundImages] = useState([]);
+    const [foundImagePreviews, setFoundImagePreviews] = useState([]);
+    const [foundLoading, setFoundLoading] = useState(false);
+    const [foundMessage, setFoundMessage] = useState('');
+    const [foundError, setFoundError] = useState('');
+
     const loggedInUserId = getUserId();
     const isFoundItemPage = itemType === 'found-items'; // Check if it's a found item page
+    const isLostItemPage = itemType === 'lost-items'; // Check if it's a lost item page
 
     // Fetch item details on component mount or when id/itemType changes
     useEffect(() => {
@@ -44,7 +56,30 @@ const ItemDetailPage = () => {
         fetchItemDetails();
     }, [id, itemType]);
 
-    // Handle Claim Form Submission
+    // Handle image file selection for "I Have This Item" form
+    const handleFoundImagesChange = (e) => {
+        const files = Array.from(e.target.files).slice(0, 5); // Limit to 5 files
+        if (files.length > 0) {
+            setFoundImages(files);
+            // Clean up old previews before creating new ones
+            foundImagePreviews.forEach(url => URL.revokeObjectURL(url));
+            const previewUrls = files.map(file => URL.createObjectURL(file));
+            setFoundImagePreviews(previewUrls);
+        } else {
+            foundImagePreviews.forEach(url => URL.revokeObjectURL(url)); // Cleanup if selection cleared
+            setFoundImages([]); 
+            setFoundImagePreviews([]);
+        }
+    };
+
+    // Clean up image preview URLs on unmount
+    useEffect(() => {
+        return () => {
+            foundImagePreviews.forEach(url => URL.revokeObjectURL(url));
+        };
+    }, [foundImagePreviews]);
+
+    // Handle Claim Form Submission (for found items)
     const handleClaimSubmit = async (e) => {
         e.preventDefault();
         if (!loggedInUserId) { setClaimError("Please log in to submit a claim."); return; }
@@ -66,6 +101,59 @@ const ItemDetailPage = () => {
              console.error("Claim Submission Error:", err);
              setClaimError(err.response?.data?.message || "Failed to submit claim.");
         } finally { setClaimLoading(false); }
+    };
+
+    // Handle "I Have This Item" Form Submission (for lost items)
+    const handleFoundItemSubmit = async (e) => {
+        e.preventDefault();
+        if (!loggedInUserId) { setFoundError("Please log in to report a found item."); return; }
+        if (!isLostItemPage) return; // Should not happen, but safety check
+        if (foundImages.length === 0) { setFoundError("Please upload at least one image of the item."); return; }
+
+        setFoundLoading(true); setFoundMessage(''); setFoundError('');
+        
+        try {
+            const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+            
+            // Create FormData for file uploads
+            const formData = new FormData();
+            formData.append('name', item.name); // Use the lost item's name
+            formData.append('dateFound', foundDate);
+            formData.append('locationFound', foundLocation);
+            formData.append('contactNo', foundContact);
+            formData.append('description', foundDescription);
+            formData.append('createdBy', loggedInUserId);
+            formData.append('relatedLostItem', id); // Reference to the lost item
+            
+            // Append each image file
+            foundImages.forEach((file) => {
+                formData.append('images', file);
+            });
+            
+            // Add government ID (required for found items)
+            // Note: In a real implementation, you might want to handle this differently
+            // For now, we're assuming the user already has a govt ID on file or will upload it later
+            
+            const response = await axios.post(`${apiUrl}/api/found-items/match-lost`, formData, {
+                headers: { 'Content-Type': 'multipart/form-data' },
+            });
+            
+            setFoundMessage(response.data.message || "Your report has been submitted successfully! The owner will be notified.");
+            
+            // Clear form
+            setFoundContact('');
+            setFoundDescription('');
+            setFoundLocation('');
+            setFoundDate('');
+            setFoundImages([]);
+            setFoundImagePreviews([]);
+            
+        } catch (err) {
+            console.error("Found Item Submission Error:", err);
+            setFoundError(err.response?.data?.message || "Failed to submit your report. Please try again.");
+        } finally {
+            setFoundLoading(false);
+        }
     };
 
     // Helper for image errors
@@ -144,7 +232,7 @@ const ItemDetailPage = () => {
                              </div>
                          )}
 
-                        {/* --- Claim Section --- */}
+                        {/* --- Claim Section (for found items) --- */}
                          {isFoundItemPage && !isOwnerOrFinder && (
                              <div className="mt-8 border-t-2 border-dashed border-gray-200 pt-6">
                                 <h3 className="text-xl font-semibold text-gray-800 mb-4">Claim This Item</h3>
@@ -176,6 +264,97 @@ const ItemDetailPage = () => {
                                 )}
                             </div>
                          )}
+
+                        {/* --- "I Have This Item" Section (for lost items) --- */}
+                        {isLostItemPage && !isOwnerOrFinder && (
+                            <div className="mt-8 border-t-2 border-dashed border-gray-200 pt-6">
+                                <h3 className="text-xl font-semibold text-gray-800 mb-4">I Have This Item</h3>
+                                {foundMessage && <p className="mb-3 text-sm text-green-600 bg-green-50 p-3 rounded border border-green-200">{foundMessage}</p>}
+                                {foundError && <p className="mb-3 text-sm text-red-600 bg-red-50 p-3 rounded border border-red-200">{foundError}</p>}
+
+                                {!foundMessage && ( // Hide form after successful submission
+                                    <form onSubmit={handleFoundItemSubmit} className="space-y-4">
+                                        <div>
+                                            <label htmlFor="foundContact" className="block text-sm font-medium text-gray-700 mb-1">Your Contact Number <span className="text-red-500">*</span></label>
+                                            <input type="tel" id="foundContact" value={foundContact} onChange={(e) => setFoundContact(e.target.value)} className="input-style" required placeholder="How the owner can reach you" />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="foundDate" className="block text-sm font-medium text-gray-700 mb-1">Date Found <span className="text-red-500">*</span></label>
+                                            <input 
+                                                type="date" 
+                                                id="foundDate" 
+                                                value={foundDate} 
+                                                onChange={(e) => setFoundDate(e.target.value)} 
+                                                className="input-style" 
+                                                required 
+                                                max={new Date().toISOString().split("T")[0]} 
+                                            />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="foundLocation" className="block text-sm font-medium text-gray-700 mb-1">Location Found <span className="text-red-500">*</span></label>
+                                            <input 
+                                                type="text" 
+                                                id="foundLocation" 
+                                                value={foundLocation} 
+                                                onChange={(e) => setFoundLocation(e.target.value)} 
+                                                className="input-style" 
+                                                required 
+                                                placeholder="Where you found the item" 
+                                            />
+                                        </div>
+                                        <div>
+                                            <label htmlFor="foundDescription" className="block text-sm font-medium text-gray-700 mb-1">Description <span className="text-red-500">*</span></label>
+                                            <textarea 
+                                                id="foundDescription" 
+                                                value={foundDescription} 
+                                                onChange={(e) => setFoundDescription(e.target.value)} 
+                                                rows="3" 
+                                                className="input-style" 
+                                                required 
+                                                placeholder="Describe the item you found and any identifying details..."
+                                            ></textarea>
+                                            <p className="text-xs text-gray-500 mt-1">Include details that would help the owner confirm it's their item.</p>
+                                        </div>
+                                        <div>
+                                            <label htmlFor="foundImages" className="block text-sm font-medium text-gray-700 mb-1">
+                                                Item Images <span className="text-red-500">*</span>
+                                                <span className="block text-xs text-gray-500 font-normal">(Upload 1-5 clear images of the item)</span>
+                                            </label>
+                                            <input 
+                                                type="file" 
+                                                id="foundImages" 
+                                                accept="image/png, image/jpeg, image/jpg" 
+                                                onChange={handleFoundImagesChange} 
+                                                className="form-file-input" 
+                                                required 
+                                                multiple 
+                                            />
+                                            {/* Image Previews */}
+                                            {foundImagePreviews.length > 0 && (
+                                                <div className="mt-2 p-2 border rounded-md bg-gray-50 flex flex-wrap gap-2">
+                                                    {foundImagePreviews.map((url, index) => (
+                                                        <img 
+                                                            key={index} 
+                                                            src={url} 
+                                                            alt={`Preview ${index + 1}`} 
+                                                            className="h-16 w-16 object-cover rounded border border-gray-300 shadow-sm" 
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </div>
+                                        <button
+                                            type="submit" 
+                                            disabled={foundLoading}
+                                            className={`w-full sm:w-auto ${foundLoading ? 'bg-green-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'} text-white font-bold py-2 px-6 rounded-md transition duration-150`}
+                                        >
+                                            {foundLoading ? 'Submitting...' : 'I Have This Item'}
+                                        </button>
+                                    </form>
+                                )}
+                            </div>
+                        )}
+
                          {/* Message if user is the finder */}
                          {isFoundItemPage && isOwnerOrFinder && (
                               <p className="mt-6 text-sm text-blue-700 bg-blue-50 p-3 rounded border border-blue-200">
@@ -192,8 +371,11 @@ const ItemDetailPage = () => {
                     </div> {/* End Details Section */}
                 </div> {/* End Grid */}
             </div> {/* End Card */}
-            {/* Reusable input style */}
-             <style jsx>{`.input-style { @apply shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent; }`}</style>
+            {/* Reusable input styles */}
+             <style jsx>{`
+                .input-style { @apply shadow-sm appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent; }
+                .form-file-input { @apply block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border file:border-gray-300 file:text-sm file:font-medium file:bg-gray-50 file:text-gray-700 hover:file:bg-gray-100 cursor-pointer focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent; }
+             `}</style>
         </div> // End Container
     );
 };

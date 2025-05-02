@@ -3,6 +3,7 @@
 const express = require("express");
 const router = express.Router();
 const FoundItem = require("../models/FoundItem"); // CORRECT: Ensure FoundItem model is imported
+const LostItem = require("../models/LostItem"); // Import LostItem model for reference checking
 const upload = require("../middleware/uploadMiddleware"); // Assuming you need file uploads here too
 
 // ---------------------------------------------------
@@ -99,6 +100,66 @@ router.put("/:id", async (req, res) => {
         res.status(500).json({ message: "Server error while updating item", error: error.message });
     }
 });
+
+// ---------------------------------------------------
+// POST Endpoint: "I Have This Item" - Match a found item to a lost item
+// ---------------------------------------------------
+router.post(
+    "/match-lost",
+    upload.fields([
+        { name: "images", maxCount: 5 } // Only need images for this route, govt ID handled separately
+    ]),
+    async (req, res) => {
+        try {
+            // Destructure expected fields from req.body
+            const { name, dateFound, locationFound, contactNo, description, createdBy, relatedLostItem } = req.body;
+
+            // Check if the lost item exists
+            const lostItem = await LostItem.findById(relatedLostItem);
+            if (!lostItem) {
+                return res.status(404).json({ message: "Lost item not found" });
+            }
+
+            // Get filenames from uploaded files
+            const imageFilenames = req.files.images?.map((img) => img.filename) || [];
+            
+            // For this route, we might not have a govt ID file directly
+            // We could either require it, use one from the user's profile, or handle it differently
+            // For now, we'll use a placeholder or empty value
+            const userGovtID = req.files.userGovtID?.[0]?.filename || "pending-verification";
+
+            // Create a new Found Item entry with reference to the lost item
+            const foundItem = new FoundItem({
+                name, // This should be the same as the lost item name
+                userGovtID,
+                images: imageFilenames,
+                dateFound,
+                locationFound,
+                contactNo,
+                description,
+                createdBy, // Link to the user who reported finding it
+                relatedLostItem // Reference to the lost item
+            });
+
+            // Save the new found item report to the database
+            await foundItem.save();
+
+            // TODO: Notify the owner of the lost item
+            // This would involve finding the user who created the lost item and sending them a notification
+            // For now, we'll just return a success message
+
+            res.status(201).json({ 
+                message: "Thank you! Your report has been submitted and the owner will be notified.", 
+                foundItem 
+            });
+
+        } catch (error) {
+            // Log the detailed error for easier debugging on the server
+            console.error("Error reporting found item match:", error);
+            res.status(500).json({ error: "Failed to report found item", details: error.message });
+        }
+    }
+);
 
 // ---------------------------------------------------
 // DELETE Endpoint (Keep this as it was)
