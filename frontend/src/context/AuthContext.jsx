@@ -84,6 +84,14 @@ export const AuthProvider = ({ children }) => {
         };
       }, []);
 
+    // --- Update User Function ---
+    const updateUser = (newUser) => {
+        setAuthState((prev) => {
+            const updated = { ...prev, user: newUser };
+            localStorage.setItem('userData', JSON.stringify(newUser));
+            return updated;
+        });
+    };
 
     // Value provided to consuming components
     const value = {
@@ -92,6 +100,7 @@ export const AuthProvider = ({ children }) => {
         error,
         login,
         logout,
+        updateUser,
         isLoadingAuth: loading // alias for clarity if needed
     };
 

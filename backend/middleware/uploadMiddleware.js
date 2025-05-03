@@ -1,23 +1,38 @@
+// backend/middleware/uploadMiddleware.js
 const multer = require("multer");
 const path = require("path");
 
-const storage = multer.diskStorage({  //Defines where and how to store uploaded files on disk:
-  destination: (req, file, cb) => {
-    cb(null, "uploads/");
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
-  },
-});
+// 1. --- Use memoryStorage instead of diskStorage ---
+// This stores the file in memory as a Buffer (accessible via req.file.buffer)
+const storage = multer.memoryStorage();
+// --- Removed diskStorage configuration ---
 
+// 2. --- Define a robust file filter ---
 const fileFilter = (req, file, cb) => {
-  const allowed = /jpeg|jpg|png/;
-  const ext = allowed.test(path.extname(file.originalname).toLowerCase());
-  const mime = allowed.test(file.mimetype);
-  if (ext && mime) cb(null, true);
-  else cb("Only images allowed");
+    // Allowed extensions and mime types
+    const allowedExtensions = /jpeg|jpg|png|gif|webp/;
+    const allowedMimeTypes = /image\/jpeg|image\/jpg|image\/png|image\/gif|image\/webp/;
+
+    // Test extension and mime type
+    const extname = allowedExtensions.test(path.extname(file.originalname).toLowerCase());
+    const mimetype = allowedMimeTypes.test(file.mimetype);
+
+    if (extname && mimetype) {
+        cb(null, true); // Accept the file
+    } else {
+        // Reject the file with a specific Error object
+        cb(new Error('Invalid file type. Only JPEG, JPG, PNG, GIF, or WEBP images are allowed.'), false);
+    }
 };
 
-const upload = multer({ storage, fileFilter });
+// 3. --- Configure multer instance ---
+const upload = multer({
+    storage: storage, // Use memory storage
+    fileFilter: fileFilter, // Use the defined file filter
+    limits: {
+        fileSize: 10 * 1024 * 1024 // Optional: Set file size limit (e.g., 10MB)
+    }
+});
 
+// 4. --- Export the configured middleware ---
 module.exports = upload;

@@ -46,7 +46,7 @@ const ItemCard = ({ item }) => {
             {/* Image Section */}
             <Link to={detailLink} className="block w-full h-48 bg-gray-100 overflow-hidden"> {/* Make image clickable */}
                  <img
-                    src={imageUrl}
+                    src={item.images[0]}
                     alt={item.name || 'Item image'}
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" // Added hover effect
                     onError={handleImageError}

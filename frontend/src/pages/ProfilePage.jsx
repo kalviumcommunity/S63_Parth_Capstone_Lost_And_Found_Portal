@@ -24,7 +24,7 @@ const ProfilePage = () => {
 
     // Construct Image URL (using user from context)
     const profilePicUrl = user?.profilePicture
-        ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/uploads/${user.profilePicture}`
+        ? user.profilePicture
         : '/default-profile-placeholder.png'; // Ensure this exists in /public
 
     // Image error handler

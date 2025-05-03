@@ -78,7 +78,7 @@ const Navbar = () => {
                 {/* Profile Picture Link */}
                 <NavLink to="/profile" className="flex items-center rounded-full hover:bg-gray-100 p-0.5" title="My Profile">
                   <img
-                    src={profilePicUrl}
+                    src={user.profilePicture}
                     alt="Profile"
                     className="h-8 w-8 rounded-full object-cover border border-gray-300"
                     onError={handleImageError}

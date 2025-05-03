@@ -168,8 +168,8 @@ const ItemDetailPage = () => {
 
     const isOwnerOrFinder = loggedInUserId && item.createdBy?._id === loggedInUserId;
     const itemDate = new Date(item.dateFound || item.dateLost).toLocaleDateString();
-    const primaryImageUrl = item.images?.[0] ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/uploads/${item.images[0]}` : '/placeholder-image.png';
-    const govtIdImageUrl = item.userGovtID ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/uploads/${item.userGovtID}` : null;
+    const primaryImageUrl = item.images?.[0] ? item.images[0] : '/placeholder-image.png';
+    const govtIdImageUrl = item.userGovtID ? item.userGovtID : null;
 
 
     return (
@@ -195,7 +195,7 @@ const ItemDetailPage = () => {
                                 {item.images.map((imgFilename, index) => ( // Show all images as thumbs
                                      <img
                                         key={index}
-                                        src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/uploads/${imgFilename}`}
+                                        src={imgFilename}
                                         alt={`Thumbnail ${index + 1}`}
                                         className="w-16 h-16 object-cover rounded border border-gray-200 cursor-pointer hover:opacity-80 transition-opacity"
                                         onError={handleImageError}

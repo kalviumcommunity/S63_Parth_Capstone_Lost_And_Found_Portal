@@ -347,7 +347,7 @@ const Dashboard = () => {
                 <div className="flex items-center mb-4">
                   {selectedItem.createdBy?.profilePicture ? (
                     <img 
-                      src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/uploads/${selectedItem.createdBy.profilePicture}`}
+                      src={selectedItem.createdBy.profilePicture}
                       alt={selectedItem.createdBy.name}
                       className="h-16 w-16 rounded-full object-cover border border-gray-300 mr-4"
                       onError={(e) => {
@@ -395,7 +395,7 @@ const Dashboard = () => {
                       {selectedItem.images.map((image, index) => (
                         <img 
                           key={index}
-                          src={`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/uploads/${image}`}
+                          src={image}
                           alt={`Item image ${index + 1}`}
                           className="h-20 w-20 object-cover rounded border border-gray-300"
                           onError={(e) => {

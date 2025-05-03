@@ -5,46 +5,60 @@ const router = express.Router();
 const FoundItem = require("../models/FoundItem"); // CORRECT: Ensure FoundItem model is imported
 const LostItem = require("../models/LostItem"); // Import LostItem model for reference checking
 const upload = require("../middleware/uploadMiddleware"); // Assuming you need file uploads here too
+const { uploadToCloudinary } = require('../utills/cloudinaryHelper');
 
 // ---------------------------------------------------
 // POST Endpoint: Report a Found Item - CORRECTED
 // ---------------------------------------------------
 router.post(
     "/",
-    upload.fields([ // Middleware to handle file uploads
-        { name: "userGovtID", maxCount: 1 }, // Expecting 'userGovtID' field for the ID image
-        { name: "images", maxCount: 5 }      // Expecting 'images' field for item images
+    upload.fields([
+        { name: "userGovtID", maxCount: 1 },
+        { name: "images", maxCount: 5 }
     ]),
     async (req, res) => {
+        const govtIdFile = req.files?.userGovtID?.[0];
+        const itemImageFiles = req.files?.images;
+
+        if (!govtIdFile || !itemImageFiles || itemImageFiles.length === 0) {
+          return res.status(400).json({ message: 'Government ID and at least one Item Image are required.' });
+        }
+
         try {
-            // Destructure expected fields from req.body
             const { name, dateFound, locationFound, contactNo, description, createdBy } = req.body;
 
-            // Get filenames from uploaded files (if they exist)
-            const userGovtIDFilename = req.files.userGovtID?.[0]?.filename; // Safely access filename
-            const imageFilenames = req.files.images?.map((img) => img.filename) || []; // Get array of filenames or empty array
+            // --- Upload files to Cloudinary ---
+            let govtIdUploadUrl = null;
+            let itemImageUrls = [];
+            const uploadPromises = [];
 
-            // --- FIX WAS HERE: Use FoundItem, not LostItem ---
-            // Create a new Found Item entry using the FoundItem model
+            uploadPromises.push( uploadToCloudinary(govtIdFile.buffer, 'founders_hub/govt_ids').then(result => { govtIdUploadUrl = result.secure_url; }) );
+            itemImageFiles.forEach(file => { uploadPromises.push( uploadToCloudinary(file.buffer, 'founders_hub/item_images').then(result => itemImageUrls.push(result.secure_url)) ); });
+
+            await Promise.all(uploadPromises);
+            // --- End Cloudinary Upload ---
+
+             if (!govtIdUploadUrl || itemImageUrls.length !== itemImageFiles.length) {
+                return res.status(500).json({ error: "File upload process failed." });
+            }
+
+            // Create new FoundItem with Cloudinary URLs
             const foundItem = new FoundItem({
                 name,
-                userGovtID: userGovtIDFilename, // Save the filename from upload
-                images: imageFilenames,       // Save the array of filenames from upload
-                dateFound,
-                locationFound,
+                userGovtID: govtIdUploadUrl, // <<<--- Save Cloudinary URL
+                images: itemImageUrls,      // <<<--- Save Array of Cloudinary URLs
+                dateFound,                  // Use correct date field
+                locationFound,              // Use correct location field
                 contactNo,
                 description,
-                createdBy, // Link to the user who reported it
+                createdBy,
             });
-            // --- END FIX ---
 
-            // Save the new found item report to the database
             await foundItem.save();
             res.status(201).json({ message: "Found item reported successfully!", foundItem });
 
         } catch (error) {
-            // Log the detailed error for easier debugging on the server
-            console.error("Error reporting found item:", error);
+            console.error("Error reporting found item with Cloudinary:", error);
             res.status(500).json({ error: "Failed to report found item", details: error.message });
         }
     }
