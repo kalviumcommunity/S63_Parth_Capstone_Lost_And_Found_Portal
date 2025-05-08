@@ -117,11 +117,11 @@ The Lost and Found Website (PSP) is a user-friendly, secure, and efficient platf
 
 ### BackEnd Deployment Link:
 
-https://s63-parth-capstone-lost-and-found-portal-z8is.onrender.com
+https://s63-parth-capstone-lost-and-found-portal.onrender.com
 
 
 
 ### FrontEnd Deployment Link:
 
 
-[lafp.netlify.app](https://lafp.netlify.app/)
+[lafp.netlify.app](https://iridescent-mooncake-b7bf08.netlify.app/)
